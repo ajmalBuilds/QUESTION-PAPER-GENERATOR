@@ -47,19 +47,70 @@ function parseTextToStructuredData(text) {
   const unitPattern = /Unit (\d+)(.*?)Unit (\d+|$)/gs;
   let match;
   
+  const bloomsKeywords = {
+    Remember: [
+      "define", "list", "recall", "identify", "name", "state", "recognize", 
+      "label", "reproduce", "retrieve", "match", "enumerate", "outline", 
+      "quote", "what", "which", "who", "when", "where"
+    ],
+    Understand: [
+      "describe", "explain", "summarize", "paraphrase", "discuss", "classify", 
+      "compare", "contrast", "interpret", "illustrate", "exemplify", "translate",
+      "restate", "outline", "predict", "give examples", "distinguish"
+    ],
+    Apply: [
+      "use", "demonstrate", "solve", "apply", "implement", "calculate", 
+      "execute", "perform", "operate", "show", "complete", "construct",
+      "determine", "adapt", "modify", "develop", "manipulate"
+    ],
+    Analyze: [
+      "analyze", "compare", "contrast", "differentiate", "examine", "test", 
+      "categorize", "criticize", "separate", "organize", "attribute", 
+      "question", "investigate", "diagram", "break down", "appraise",
+      "detect", "distinguish"
+    ],
+    Evaluate: [
+      "evaluate", "justify", "critique", "assess", "judge", "argue", 
+      "defend", "support", "conclude", "recommend", "appraise", 
+      "prioritize", "rate", "validate", "debate", "weigh", "select", 
+      "interpret"
+    ],
+    Create: [
+      "design", "develop", "compose", "construct", "generate", "plan", 
+      "propose", "assemble", "formulate", "create", "invent", 
+      "synthesize", "modify", "arrange", "blend", "devise", 
+      "rearrange", "rewrite"
+    ]
+  };
+  
+  
+
   while ((match = unitPattern.exec(text)) !== null) {
     const unitNumber = match[1];
     const questionsAnswersText = match[2].trim();
     const questions = [];
 
+    function assignBloomsLevel(question) {
+      for (const [level, keywords] of Object.entries(bloomsKeywords)) {
+        for (const keyword of keywords) {
+          if (question.toLowerCase().includes(keyword)) {
+            return level; // Return the matched Bloom's level
+          }
+        }
+      }
+      return 'Unknown'; // If no keywords match
+    }
     // Split questions and answers by line
     const lines = questionsAnswersText.split('\n');
     lines.forEach(line => {
       const parts = line.split('?');
       if (parts.length === 2) {
+        const questionText = parts[0].trim() + '?';
+        const bloomsLevel = assignBloomsLevel(questionText);
         questions.push({
-          question: parts[0].trim() + '?',
-          answer: parts[1].trim()
+          question: questionText,
+          answer: parts[1].trim(),
+          bloomsLevel
         });
       }
     });
@@ -111,8 +162,11 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   } finally {
     // Clean up uploaded file
     if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+      fs.unlink(filePath, (err) => {
+        if (err) console.error('Error deleting file:', err.message);
+      });
     }
+    
   }
 });
 

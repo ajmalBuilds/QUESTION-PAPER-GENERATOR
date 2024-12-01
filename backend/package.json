@@ -14,6 +14,8 @@
     "csv-parser": "^3.0.0",
     "docx": "^9.1.0",
     "express": "^4.21.1",
+    "jspdf": "^2.5.2",
+    "jspdf-font": "^1.0.7",
     "mammoth": "^1.8.0",
     "multer": "^1.4.5-lts.1",
     "pdf-parse": "^1.1.1"

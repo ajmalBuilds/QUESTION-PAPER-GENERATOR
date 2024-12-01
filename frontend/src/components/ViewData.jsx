@@ -54,43 +54,72 @@ const ViewData = () => {
   const generatePDF = () => {
     const { partA, partB } = processParts(structuredData);
     const doc = new jsPDF();
-
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+    const textWidth = pageWidth - margin * 2;
+  
     // Add title
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("Generated Questions", 10, 10);
-
+    doc.text("Generated Questions", margin, 10);
+  
+    let y = 20;
+  
+    const addSection = (title, questions) => {
+      doc.setFontSize(14);
+      doc.text(title, margin, y);
+      y += 10;
+  
+      questions.forEach((q, index) => {
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(12);
+  
+        // Handle question text
+        const questionText = `${index + 1}. ${q.question}`;
+        const questionLines = doc.splitTextToSize(questionText, textWidth);
+        doc.text(questionLines, margin, y);
+        y += questionLines.length * 6;
+  
+        // Handle Bloom's level
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        const bloomsLevelText = `Bloom's Level: ${q.bloomsLevel}`;
+        doc.text(bloomsLevelText, margin, y);
+        y += 6;
+  
+        // Handle answer text
+        doc.setFontSize(12);
+        doc.setFont("Helvetica", "italic");
+        const answerText = `Answer: ${q.answer}`;
+        const answerLines = doc.splitTextToSize(answerText, textWidth);
+        doc.text(answerLines, margin, y);
+        y += answerLines.length * 6;
+  
+        // Add extra spacing
+        y += 4;
+  
+        // Check for page overflow
+        if (y > 280) {
+          doc.addPage();
+          y = 10;
+        }
+      });
+    };
+  
     // Add Part A
-    doc.setFontSize(14);
-    doc.text("Part A:", 10, 20);
-    doc.setFont("Helvetica", "normal");
-    let y = 30;
-    partA.forEach((q, index) => {
-      doc.text(`${index + 1}. ${q.question}`, 10, y);
-      doc.text(`Answer: ${q.answer}`, 10, y + 6);
-      y += 14;
-      if (y > 280) {
-        doc.addPage();
-        y = 10;
-      }
-    });
-
+    addSection("Part A:", partA);
+  
     // Add Part B
-    doc.setFontSize(14);
-    doc.text("Part B:", 10, y + 10);
-    y += 20;
-    partB.forEach((q, index) => {
-      doc.text(`${index + 1}. ${q.question}`, 10, y);
-      doc.text(`Answer: ${q.answer}`, 10, y + 6);
-      y += 14;
-      if (y > 280) {
-        doc.addPage();
-        y = 10;
-      }
-    });
-
+    if (y > 280) {
+      doc.addPage();
+      y = 10;
+    }
+    addSection("Part B:", partB);
+  
+    // Save the PDF
     doc.save("Question_Paper.pdf");
   };
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,10 +172,12 @@ const ViewData = () => {
         <ul className="list-decimal font-normal ml-6">
           {partA.map((q, index) => (
             <li key={index}>
-              <strong>{q.question}</strong>
-              <br />
-              <em>{q.answer}</em>
-            </li>
+            <strong>{q.question}</strong>
+            <br/>
+            <span className="text-sm text-gray-600">Bloom's Level: {q.bloomsLevel}</span>
+            <br />
+            <em>Answer : {q.answer}</em>
+          </li>
           ))}
         </ul>
       </div>
@@ -158,8 +189,10 @@ const ViewData = () => {
           {partB.map((q, index) => (
             <li key={index}>
               <strong>{q.question}</strong>
+              <br/>
+              <span className="text-sm text-gray-600">Bloom's Level: {q.bloomsLevel}</span>
               <br />
-              <em>{q.answer}</em>
+              <em>Answer: {q.answer}</em>
             </li>
           ))}
         </ul>
